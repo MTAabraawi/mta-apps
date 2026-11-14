@@ -1,0 +1,1 @@
+window.MTA_CONFIG = window.MTA_CONFIG || { API_BASE: "" }; // Set API_BASE to the deployed catalogue API URL. Never put admin tokens here.

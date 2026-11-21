@@ -31,7 +31,7 @@ async function explore(){
   const hasMore=()=>pagination.hasMore(offset,total,items.length);
   function updateControls(){
     if(count)count.textContent=total?items.length+" من "+total+" تطبيق":items.length+" تطبيق";
-    if(moreWrap)moreWrap.hidden=!hasMore();
+    if(moreWrap)moreWrap.hidden=!(hasMore()||autoPaused);
     if(moreButton){moreButton.disabled=loading;moreButton.textContent=loading?"جارٍ التحميل…":"تحميل المزيد";}
     if(status&& !loading && !autoPaused)status.textContent=hasMore()?"سيتم تحميل المزيد تلقائياً عند الاقتراب من نهاية القائمة.":"وصلت إلى نهاية النتائج.";
   }
@@ -44,7 +44,7 @@ async function explore(){
   }
   async function load(reset=false,manual=false){
     if(loading)return;
-    if(!reset&&!hasMore())return;
+    if(!reset&&!hasMore()&&!(autoPaused&&manual))return;
     if(!reset&&autoPaused&&!manual)return;
     if(reset){
       version++;
@@ -52,9 +52,7 @@ async function explore(){
       controller=null;
       loading=false;
       items=[];offset=0;total=0;autoPaused=false;
-      if(observer)observer.disconnect();
       if(!el.querySelector(".card"))el.innerHTML=empty("جارٍ تحميل التطبيقات…","");
-      else el.querySelectorAll(".card").forEach(node=>node.remove());
       if(status)status.textContent="";
     }
     const requestVersion=version;
@@ -70,11 +68,16 @@ async function explore(){
       items=unique;
       offset+=result.rows.length;
       total=result.total;
-      if(sort.value==="name")items.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-      if(reset)el.innerHTML="";
-      if(added>0){
-        const existing=new Set(Array.from(el.querySelectorAll(".card")).map(node=>node.dataset.appKey));
-        renderAppend(items.filter(item=>!existing.has(appKey(item))));
+      if(sort.value==="name"){
+        items.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+        el.innerHTML="";
+        renderAppend(items);
+      }else{
+        if(reset)el.innerHTML="";
+        if(added>0){
+          const existing=new Set(Array.from(el.querySelectorAll(".card")).map(node=>node.dataset.appKey));
+          renderAppend(items.filter(item=>!existing.has(appKey(item))));
+        }
       }
       if(!items.length)el.innerHTML=empty("لا توجد نتائج","غيّر البحث أو المنصة وحاول مجدداً.");
       if(result.rows.length===0||offset>=total)offset=Math.max(offset,total);

@@ -63,6 +63,7 @@ async function explore(){
     try{
       const result=await fetchApps({q:q.value.trim(),platform:p.value,limit:PAGE_SIZE,offset},requestController.signal);
       if(requestVersion!==version)return;
+      if(manual)autoPaused=false;
       const unique=mergeApps(items,result.rows);
       const added=unique.length-items.length;
       items=unique;

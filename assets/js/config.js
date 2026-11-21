@@ -1,1 +1,1 @@
-window.MTA_CONFIG = window.MTA_CONFIG || { API_BASE: "" }; // Set API_BASE to the deployed catalogue API URL. Never put admin tokens here.
+window.MTA_CONFIG = window.MTA_CONFIG || { API_BASE: "https://mta-applications-engine.hoaam100.workers.dev" }; // Public read-only catalogue API; never put admin tokens here.

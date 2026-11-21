@@ -1,0 +1,54 @@
+name: MTA Apps Frontend Checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "assets/js/**"
+      - "*.html"
+      - "tests/**"
+      - ".github/workflows/frontend-checks.yml"
+  push:
+    branches: [feature/professional-app-store-redesign]
+    paths:
+      - "assets/js/**"
+      - "*.html"
+      - "tests/**"
+      - ".github/workflows/frontend-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          node --check assets/js/app.js
+          node --check assets/js/pagination.js
+      - name: Test pagination and duplicate protection
+        run: node --test tests/pagination.test.cjs
+      - name: Verify pagination assets are loaded before the app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          pages = ["about.html", "app.html", "categories.html", "contact.html", "explore.html", "index.html", "privacy.html", "terms.html"]
+          for page in pages:
+              text = Path(page).read_text(encoding="utf-8")
+              helper = text.find('assets/js/pagination.js')
+              app = text.find('assets/js/app.js')
+              assert helper >= 0 and app > helper, f"pagination helper order is wrong in {page}"
+          explore = Path("explore.html").read_text(encoding="utf-8")
+          for marker in ['id="loadMore"', 'id="loadSentinel"', 'id="loadStatus"']:
+              assert marker in explore, f"missing infinite-scroll element: {marker}"
+          source = Path("assets/js/app.js").read_text(encoding="utf-8")
+          for marker in ["IntersectionObserver", "PAGE_SIZE=12", "AbortController", "autoPaused"]:
+              assert marker in source, f"missing pagination behavior: {marker}"
+          print("Frontend pagination markup and behavior hooks are present.")
+          PY
